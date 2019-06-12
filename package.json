@@ -1,5 +1,5 @@
 {
-  "name": "webpack-conditional-loader",
+  "name": "webpack-conditional-code-excluder",
   "version": "1.0.12",
   "description": "#ifdef for JavaScript",
   "main": "src/index.js",
