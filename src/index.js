@@ -1,18 +1,19 @@
 /* eslint-disable no-eval */
 const os = require('os');
 
+const startBlockRegex = /[<!--|\/\/] #if ([\s\S]*?)(-->)?$/;
+const endBlockRegex = /[<!--|\/\/] #endif/;
+
 function getPredicate (line) {
-  return /\/\/ #if (.*)/.exec(line)[1]
+  return startBlockRegex.exec(line)[1]
 }
 
 function searchBlocks (sourceByLine) {
   const blocks = []
   let current = 0
-  const startBlock = /\/\/ #if .*/
-  const endBlock = /\/\/ #endif$/
 
   while (current < sourceByLine.length) {
-    if (startBlock.test(sourceByLine[current])) {
+    if (startBlockRegex.test(sourceByLine[current])) {
       blocks[current] = {
         type: 'begin',
         predicate: getPredicate(sourceByLine[current])
@@ -22,7 +23,7 @@ function searchBlocks (sourceByLine) {
       continue
     }
 
-    if (endBlock.test(sourceByLine[current])) {
+    if (endBlockRegex.test(sourceByLine[current])) {
       blocks[current] = {
         type: 'end'
       }
