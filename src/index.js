@@ -4,6 +4,10 @@ const os = require('os');
 const startBlockRegex = /[<!--|\/\/] #if ([\s\S]*?)(-->)?$/;
 const endBlockRegex = /[<!--|\/\/] #endif/;
 
+function isHtml (line) {
+  return /<!--.*-->/.test(line);
+}
+
 function getPredicate (line) {
   return startBlockRegex.exec(line)[1]
 }
@@ -13,17 +17,20 @@ function searchBlocks (sourceByLine) {
   let current = 0
 
   while (current < sourceByLine.length) {
-    if (startBlockRegex.test(sourceByLine[current])) {
+    const currentLine = sourceByLine[current];
+
+    if (startBlockRegex.test(currentLine)) {
       blocks[current] = {
         type: 'begin',
-        predicate: getPredicate(sourceByLine[current])
+        predicate: getPredicate(currentLine),
+        isHtml: isHtml(currentLine)
       }
 
       current += 1
       continue
     }
 
-    if (endBlockRegex.test(sourceByLine[current])) {
+    if (endBlockRegex.test(currentLine)) {
       blocks[current] = {
         type: 'end'
       }
@@ -67,12 +74,14 @@ function commentCodeInsideBlocks (sourceByLine, blocks) {
   let i = 0
   let action = ''
   let sourceByLineTransformed = sourceByLine.slice()
+  let isHtml;
 
   while (i < sourceByLine.length) {
     currentBlock = blocks[i]
 
     if (currentBlock && currentBlock.type === 'begin') {
       action = 'commentLine'
+      isHtml = currentBlock.isHtml;
       i += 1
       continue
     }
@@ -84,7 +93,7 @@ function commentCodeInsideBlocks (sourceByLine, blocks) {
     }
 
     if (action === 'commentLine') {
-      sourceByLineTransformed[i] = commentLine(sourceByLine[i])
+      sourceByLineTransformed[i] = commentLine(sourceByLine[i], isHtml)
     }
 
     i += 1
@@ -93,8 +102,8 @@ function commentCodeInsideBlocks (sourceByLine, blocks) {
   return sourceByLineTransformed
 }
 
-function commentLine (line) {
-  return `// ${line}`
+function commentLine (line, isHtml) {
+  return isHtml ? `<!-- ${line} -->` : `// ${line}`
 }
 
 module.exports = function (source) {
